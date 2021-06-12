@@ -57,11 +57,11 @@ class UserController extends Controller
         }
         else{
             $otp = Helper::generateOTP();
-            DB::table('userss')->where('phone_no',$request->phone_no)->update(['otp',$otp]);
+            DB::table('users')->where('phone_no',$request->phone_no)->update(['otp',$otp]);
 
             /**send otp to user using twilio */
             $message = 'Your OTP is --'.$otp;
-            Helper::sendOtp($request->phone_no,$message);
+            // Helper::sendOtp($request->phone_no,$message);
             if($request->has('otp')){
                 $auth =  Auth::attempt(['phone_no'=>$request->phone_no,'otp'=>$request->otp]);
                 if($auth){
@@ -72,7 +72,7 @@ class UserController extends Controller
             return response()->json(['status'=>true,'message'=>'Otp sent successffully','response'=>[]]);
         }
     }
-
+    // a user can have the multiple books
     public function addBooks(Request $request){
         $validated = Validator::make($request->all(),[
             'user_id'=>'required|exists:users,id',
@@ -83,9 +83,46 @@ class UserController extends Controller
         }
         else{
             $book = DB::table('books')->create([
-                
+                'user_id'=>$request->user_id,
+                'book_description'=>$request->book_description
             ]);
+            return response()->json(['status'=>true,'message'=>'book is added successfully','response'=>[]]);
+        }
+    }
+    // a book can have multiple authors
+    public function addAuthors(Request $request){
+        $validated = Validator::make($request->all(),[
+            'user_id'=>'required|exists:users,id',
+            'book_description'=>'required'
+        ]);
+        if($validated->fails()){
+            return  response()->json(['status'=>false,'message'=>$validated->errors()->first()]);
+        }
+        else{
+            $author = DB::table('authors')->create([
+                'book_id'=>$request->book_id,
+                'author'=>$request->author
+            ]);
+        }
+        return response()->json(['status'=>true,'message'=>'Author is added successfully','response'=>[]]);
+    }
+    // fetch books -- user books -- books have multiple authors
+    public function fetchBooks(Request $request){
+        $validated = Validator::make($request->all(),[
+            'user_id'=>'required|exists:users,id',
+            
+        ]);
+        if($validated->fails()){
+            return  response()->json(['status'=>false,'message'=>$validated->errors()->first()]);
+        }
+        else{
 
+            $data = DB::table('users')
+                ->join('books','books.user_id','=','users.id')
+                ->join('authors','authors','authors.book_id','=','books.id')
+                ->where('users.id',$request->user_id)
+                ->get();
+            return response()->json(['status'=>false,'message'=>'data ftched successfully','response'=>$data]);
         }
     }
 }

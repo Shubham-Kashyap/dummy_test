@@ -20,4 +20,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::namespace('Api')->prefix('user')->group(function(){
     Route::post('register','UserController@userRegister');
+    Route::post('login','UserController@login');
+    Route::post('add-books','UserController@addBooks');
+    Route::post('add-book-authors','UserController@addAuthors');
+
 });
